@@ -57,7 +57,7 @@ function redirect_to_auth( conf, callback_url )
     if(conf.pf_idp_adapter_id == "") then --Standard Auth URL(Something other than ping)
        oauth_authorize = conf.authorize_url .. "?response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope
     else --Ping Federate Auth URL
-         oauth_authorize = conf.authorize_url .. "?pfidpadapterid=" .. to_string(conf.pf_idp_adapter_id) .. "&response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope
+         oauth_authorize = conf.authorize_url .. "?pfidpadapterid=" .. (conf.pf_idp_adapter_id or "") .. "&response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope
        --oauth_authorize = conf.authorize_url .. "?pfidpadapterid=" .. conf.pf_idp_adapter_id .. "&response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope .. "&prompt=none"
     end
     
