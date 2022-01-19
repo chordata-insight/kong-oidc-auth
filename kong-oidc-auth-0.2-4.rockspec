@@ -1,7 +1,7 @@
 package = "kong-oidc-auth"
-version = "0.2-3"
+version = "0.2-4"
 source = {
-   url = "git+https://github.com/Optum/kong-oidc-auth.git"
+   url = "git+https://github.com/chordata-insight/kong-oidc-auth.git"
 }
 description = {
    summary = "OpenID Connect authentication with Kong gateway",
