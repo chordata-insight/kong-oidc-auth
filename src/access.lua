@@ -57,7 +57,7 @@ function redirect_to_auth( conf, callback_url )
     if(conf.pf_idp_adapter_id == "") then --Standard Auth URL(Something other than ping)
        oauth_authorize = conf.authorize_url .. "?response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope
     else --Ping Federate Auth URL
-         oauth_authorize = conf.authorize_url .. "?pfidpadapterid=" .. conf.pf_idp_adapter_id .. "&response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope
+         oauth_authorize = conf.authorize_url .. "?pfidpadapterid=" .. to_string(conf.pf_idp_adapter_id) .. "&response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope
        --oauth_authorize = conf.authorize_url .. "?pfidpadapterid=" .. conf.pf_idp_adapter_id .. "&response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope .. "&prompt=none"
     end
     
@@ -194,13 +194,7 @@ function _M.run(conf)
 
     	
 	-- check if we are authenticated already
-	if access_token then
-	    local access_token = decode_token(encrypted_token, conf)
-	    if not access_token then
-		-- broken access token
-	       return redirect_to_auth( conf, callback_url )
-	    end
-	    
+	if access_token then	    
 	    --They had a valid EOAuthToken so its safe to process a proper logout now.
 	    if pl_stringx.endswith(path_prefix, "/logout") then
 	    	return handle_logout(encrypted_token, conf)
