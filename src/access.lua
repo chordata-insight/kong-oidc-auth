@@ -178,10 +178,23 @@ function _M.run(conf)
 	  callback_url = ngx.var.scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	end
 
-	local encrypted_token = ngx.var.cookie_EOAuthToken
-	
+    local access_token = ngx.req.get_headers()["Authorization"]
+    if access_token then
+        access_token = pl_stringx.replace(access_token, "Bearer ", "", 1)
+    end
+
+    if not access_token then
+        ngx.log(ngx.WARN, "No access token was found in the Authorization bearer header")
+
+        local encrypted_token = ngx.var.cookie_EOAuthToken
+        if encrypted_token then
+            access_token = decode_token(encrypted_token, conf)
+        end
+    end
+
+    	
 	-- check if we are authenticated already
-	if encrypted_token then
+	if access_token then
 	    local access_token = decode_token(encrypted_token, conf)
 	    if not access_token then
 		-- broken access token
