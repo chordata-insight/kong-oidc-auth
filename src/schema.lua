@@ -28,6 +28,7 @@ return {
            { app_login_redirect_url = { type = "string", required = false }, },
            { token_url = { type = "string", required = true, custom_validator = validate_url }, },
            { user_url  = {type = "string", required = true, custom_validator = validate_url}, },
+           { client_id = { type = "string", required = true}, },
            { client_secret = { type = "string", required = true}, },
            { scope = { type = "string" }, },
            { salt = { type = "string", required = true, default = "b3253141ce67204b"}, },
