@@ -18,12 +18,22 @@ local function getUserInfo(access_token, callback_url, conf)
     ngx.log(ngx.WARN, access_token)
 
     local httpc = http:new()
+    -- local res, err = httpc:request_uri(conf.user_url, {
+    --     method = "GET",
+    --     ssl_verify = false,
+    --     headers = {
+    --       ["Authorization"] = "Bearer " .. access_token,
+    --     }
+    -- })
+
     local res, err = httpc:request_uri(conf.user_url, {
-        method = "GET",
+        method = "POST",
         ssl_verify = false,
         headers = {
-          ["Authorization"] = "Bearer " .. access_token,
-        }
+        	["Content-Type"] = "application/x-www-form-urlencoded",
+         	["Authorization"] = "Bearer " .. access_token,
+        },
+        body = "client_id=" .. conf.client_id .. "&client_secret=" .. conf.client_secret
     })
 
     if err then
