@@ -30,6 +30,10 @@ local function getUserInfo(access_token, callback_url, conf)
 		ngx.log(ngx.ERR, "Could not retrieve UserInfo from Keycloak: ", err)
 	end
 
+	if res then
+		ngx.log(ngx.WARN, "HTTP Status: ", res.status)
+	end
+
 	-- redirect to auth if user result is invalid not 200
 	if not res or res.status ~= 200 then
 		return redirect_to_auth(conf, callback_url)
