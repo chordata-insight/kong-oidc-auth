@@ -258,14 +258,16 @@ function _M.run(conf)
 		
 			if json then
 			    ngx.log(ngx.WARN, "Got json")
-		    	if conf.hosted_domain ~= "" and conf.email_key ~= "" then
-					if not pl_stringx.endswith(json[conf.email_key], conf.hosted_domain) then
-					    ngx.log(ngx.WARN, "Hosted domain is not matching")
-					    ngx.log(ngx.WARN, conf.hosted_domain)
-			    		oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "Hosted domain is not matching"}
-			    		return kong.response.exit(oidc_error.status, { message = oidc_error.message })
-					end
-		    	end
+		    	if conf.hosted_domain and conf.email_key then
+			    	if conf.hosted_domain ~= "" and conf.email_key ~= "" then
+						if not pl_stringx.endswith(json[conf.email_key], conf.hosted_domain) then
+						    ngx.log(ngx.WARN, "Hosted domain is not matching")
+						    ngx.log(ngx.WARN, conf.hosted_domain)
+				    		oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "Hosted domain is not matching"}
+				    		return kong.response.exit(oidc_error.status, { message = oidc_error.message })
+						end
+			    	end
+			    end
 
 			    for i, key in ipairs(conf.user_keys) do
 					ngx.header["X-Oauth-".. key] = json[key]
