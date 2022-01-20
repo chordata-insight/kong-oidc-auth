@@ -13,9 +13,8 @@ local cookieDomain = nil
 local kong = kong 
 
 local function getUserInfo(access_token, callback_url, conf)
-    ngx.log(ngx.WARN, "getUserInfo")
+    ngx.log(ngx.WARN, "getUserInfo from URL")
     ngx.log(ngx.WARN, conf.user_url)
-    ngx.log(ngx.WARN, access_token)
 
     local httpc = http:new()
     local res, err = httpc:request_uri(conf.user_url, {
