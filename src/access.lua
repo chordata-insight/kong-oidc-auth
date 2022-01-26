@@ -46,7 +46,7 @@ local function getUserInfo(access_token, callback_url, conf, authHeader)
 
 	-- redirect to auth if user result is invalid not 200
 	if not res or res.status ~= 200 then
-		if authHeader
+		if authHeader then
     		oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "Hosted domain is not matching"}
     		return kong.response.exit(oidc_error.status, { message = oidc_error.message })
 		else
