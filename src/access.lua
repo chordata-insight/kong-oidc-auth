@@ -12,7 +12,7 @@ local salt = nil --16 char alphanumeric
 local cookieDomain = nil
 local kong = kong 
 
-local function getUserInfo(access_token, callback_url, conf)
+local function getUserInfo(access_token, callback_url, conf, authHeader)
     ngx.log(ngx.WARN, "getUserInfo from URL")
     ngx.log(ngx.WARN, conf.user_url)
     ngx.log(ngx.WARN, access_token)
@@ -46,7 +46,12 @@ local function getUserInfo(access_token, callback_url, conf)
 
 	-- redirect to auth if user result is invalid not 200
 	if not res or res.status ~= 200 then
-		return redirect_to_auth(conf, callback_url)
+		if authHeader
+    		oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "Hosted domain is not matching"}
+    		return kong.response.exit(oidc_error.status, { message = oidc_error.message })
+		else
+			return redirect_to_auth(conf, callback_url)
+		end
 	end
 
 	local userJson = cjson.decode(res.body)
@@ -59,7 +64,7 @@ local function getKongKey(eoauth_token, access_token, callback_url, conf)
     ngx.log(ngx.WARN, "getKongKey")
 	-- This will add a 28800 second (8 hour) expiring TTL on this cached value
 	-- https://github.com/thibaultcha/lua-resty-mlcache/blob/master/README.md
-	local userInfo, err = singletons.cache:get(eoauth_token, { ttl = 28800 }, getUserInfo, access_token, callback_url, conf)
+	local userInfo, err = singletons.cache:get(eoauth_token, { ttl = 28800 }, getUserInfo, access_token, callback_url, conf, false)
 
 	if err then
 		ngx.log(ngx.ERR, "Could not retrieve UserInfo: ", err)
@@ -205,90 +210,117 @@ function _M.run(conf)
 	  callback_url = ngx.var.scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	end
 
+	local authHeader = false
     local access_token = ngx.req.get_headers()["Authorization"]
     if access_token then
-	    ngx.log(ngx.WARN, "Access Token in Header")
+    	authHeader = true
+	    ngx.log(ngx.INFO, "Access Token in Header")
         access_token = pl_stringx.replace(access_token, "Bearer ", "", 1)
-    end
 
-    if not access_token then
+	    ngx.log(ngx.INFO, "Auth Header No Cookie so getUserInfo")
+		local json = getUserInfo(access_token, callback_url, conf, true)
+	
+		if json then
+		    ngx.log(ngx.INFO, "Got json")
+	    	if conf.hosted_domain and conf.email_key then
+		    	if conf.hosted_domain ~= "" and conf.email_key ~= "" then
+					if not pl_stringx.endswith(json[conf.email_key], conf.hosted_domain) then
+					    ngx.log(ngx.WARN, "Hosted domain is not matching")
+					    ngx.log(ngx.WARN, conf.hosted_domain)
+			    		oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "Hosted domain is not matching"}
+			    		return kong.response.exit(oidc_error.status, { message = oidc_error.message })
+					end
+		    	end
+		    end
+
+		    for i, key in ipairs(conf.user_keys) do
+				ngx.header["X-Oauth-".. key] = json[key]
+				ngx.req.set_header("X-Oauth-".. key, json[key])
+	    	end
+	    	ngx.header["X-Oauth-Token"] = access_token
+		else
+		    ngx.log(ngx.ERR, "500 return")
+		    ngx.log(ngx.ERR, err)
+	    	return kong.response.exit(500, { message = err })
+		end
+    else
         ngx.log(ngx.WARN, "No access token was found in the Authorization bearer header")
 
         local encrypted_token = ngx.var.cookie_EOAuthToken
         if encrypted_token then
             access_token = decode_token(encrypted_token, conf)
         end
-    end
 
-    	
-	-- check if we are authenticated already
-	if access_token then	    
-	    --They had a valid EOAuthToken so its safe to process a proper logout now.
-	    if pl_stringx.endswith(path_prefix, "/logout") then
-		    ngx.log(ngx.WARN, "logging out")
-	    	return handle_logout(encrypted_token, conf)
-	    end
-	    
-	    --Update the Cookie to increase longevity for 30 more minutes if active proxying
-	    if type(ngx.header["Set-Cookie"]) == "table" then
-			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, unpack(ngx.header["Set-Cookie"]) }
-	    else
-			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
-	    end
+	    	
+		-- check if we are authenticated already
+		if access_token then	    
+		    --They had a valid EOAuthToken so its safe to process a proper logout now.
+		    if pl_stringx.endswith(path_prefix, "/logout") then
+			    ngx.log(ngx.WARN, "logging out")
+		    	return handle_logout(encrypted_token, conf)
+		    end
+		    
+		    --Update the Cookie to increase longevity for 30 more minutes if active proxying
+		    if type(ngx.header["Set-Cookie"]) == "table" then
+				ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, unpack(ngx.header["Set-Cookie"]) }
+		    else
+				ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
+		    end
 
-	     --CACHE LOGIC - Check boolean and then if EOAUTH has existing key -> userInfo value
-	    if conf.user_info_cache_enabled then
-		    ngx.log(ngx.WARN, "user_info_cache_enabled = true")
-			local userInfo = getKongKey(encrypted_token, access_token, callback_url, conf)
-			if userInfo then
-				for i, key in ipairs(conf.user_keys) do		
-			    	ngx.header["X-Oauth-".. key] = userInfo[key]
-			    	ngx.req.set_header("X-Oauth-".. key, userInfo[key])
+		     --CACHE LOGIC - Check boolean and then if EOAUTH has existing key -> userInfo value
+		    if conf.user_info_cache_enabled then
+			    ngx.log(ngx.WARN, "user_info_cache_enabled = true")
+				local userInfo = getKongKey(encrypted_token, access_token, callback_url, conf)
+				if userInfo then
+					for i, key in ipairs(conf.user_keys) do		
+				    	ngx.header["X-Oauth-".. key] = userInfo[key]
+				    	ngx.req.set_header("X-Oauth-".. key, userInfo[key])
+					end
+				    ngx.header["X-Oauth-Token"] = access_token	
+					return
 				end
-			    ngx.header["X-Oauth-Token"] = access_token	
-				return
-			end
-	    end
-	    -- END OF NEW CACHE LOGIC --
+		    end
+		    -- END OF NEW CACHE LOGIC --
 
-	    -- Get user info
-	    if not ngx.var.cookie_EOAuthUserInfo then
-		    ngx.log(ngx.WARN, "No Cookie so getUserInfo")
-			local json = getUserInfo(access_token, callback_url, conf)
-		
-			if json then
-			    ngx.log(ngx.WARN, "Got json")
-		    	if conf.hosted_domain and conf.email_key then
-			    	if conf.hosted_domain ~= "" and conf.email_key ~= "" then
-						if not pl_stringx.endswith(json[conf.email_key], conf.hosted_domain) then
-						    ngx.log(ngx.WARN, "Hosted domain is not matching")
-						    ngx.log(ngx.WARN, conf.hosted_domain)
-				    		oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "Hosted domain is not matching"}
-				    		return kong.response.exit(oidc_error.status, { message = oidc_error.message })
-						end
+		    -- Get user info
+		    if not ngx.var.cookie_EOAuthUserInfo then
+			    ngx.log(ngx.WARN, "No Cookie so getUserInfo")
+				local json = getUserInfo(access_token, callback_url, conf, false)
+			
+				if json then
+				    ngx.log(ngx.WARN, "Got json")
+			    	if conf.hosted_domain and conf.email_key then
+				    	if conf.hosted_domain ~= "" and conf.email_key ~= "" then
+							if not pl_stringx.endswith(json[conf.email_key], conf.hosted_domain) then
+							    ngx.log(ngx.WARN, "Hosted domain is not matching")
+							    ngx.log(ngx.WARN, conf.hosted_domain)
+					    		oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "Hosted domain is not matching"}
+					    		return kong.response.exit(oidc_error.status, { message = oidc_error.message })
+							end
+				    	end
+				    end
+
+				    for i, key in ipairs(conf.user_keys) do
+						ngx.header["X-Oauth-".. key] = json[key]
+						ngx.req.set_header("X-Oauth-".. key, json[key])
 			    	end
-			    end
+			    	ngx.header["X-Oauth-Token"] = access_token
 
-			    for i, key in ipairs(conf.user_keys) do
-					ngx.header["X-Oauth-".. key] = json[key]
-					ngx.req.set_header("X-Oauth-".. key, json[key])
-		    	end
-		    	ngx.header["X-Oauth-Token"] = access_token
+			    	if type(ngx.header["Set-Cookie"]) == "table" then
+						ngx.header["Set-Cookie"] = { "EOAuthUserInfo=0;Path=/;Expires=" .. ngx.cookie_time(ngx.time() + conf.user_info_periodic_check) .. ";Max-Age=" .. conf.user_info_periodic_check .. ";HttpOnly", unpack(ngx.header["Set-Cookie"]) }
+			    	else
+						ngx.header["Set-Cookie"] = { "EOAuthUserInfo=0;Path=/;Expires=" .. ngx.cookie_time(ngx.time() + conf.user_info_periodic_check) .. ";Max-Age=" .. conf.user_info_periodic_check .. ";HttpOnly", ngx.header["Set-Cookie"] }
+			    	end
 
-		    	if type(ngx.header["Set-Cookie"]) == "table" then
-					ngx.header["Set-Cookie"] = { "EOAuthUserInfo=0;Path=/;Expires=" .. ngx.cookie_time(ngx.time() + conf.user_info_periodic_check) .. ";Max-Age=" .. conf.user_info_periodic_check .. ";HttpOnly", unpack(ngx.header["Set-Cookie"]) }
-		    	else
-					ngx.header["Set-Cookie"] = { "EOAuthUserInfo=0;Path=/;Expires=" .. ngx.cookie_time(ngx.time() + conf.user_info_periodic_check) .. ";Max-Age=" .. conf.user_info_periodic_check .. ";HttpOnly", ngx.header["Set-Cookie"] }
-		    	end
-
-			else
-			    ngx.log(ngx.ERR, "500 return")
-			    ngx.log(ngx.ERR, err)
-		    	return kong.response.exit(500, { message = err })
-			end
-	    end
-	else
-	    return redirect_to_auth(conf, callback_url)
+				else
+				    ngx.log(ngx.ERR, "500 return")
+				    ngx.log(ngx.ERR, err)
+			    	return kong.response.exit(500, { message = err })
+				end
+		    end
+		else
+		    return redirect_to_auth(conf, callback_url)
+		end
 	end
 end
 
