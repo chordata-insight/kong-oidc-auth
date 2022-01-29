@@ -212,6 +212,11 @@ function _M.run(conf)
 	  callback_url = ngx.var.scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	end
 
+	ngx.log(ngx.INFO, "============================================================")
+	ngx.log(ngx.INFO, "Scheme: " .. ngx.var.scheme)
+	ngx.log(ngx.INFO, "callback_url: " .. callback_url.scheme)
+	ngx.log(ngx.INFO, "============================================================")
+
 	local authHeader = false
     local access_token = ngx.req.get_headers()["Authorization"]
     if access_token then
