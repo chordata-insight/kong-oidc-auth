@@ -206,6 +206,7 @@ function _M.run(conf)
 
 	scheme = ngx.var.scheme
 	if conf.force_ssl_for_redirect then
+		ngx.log(ngx.WARN, "conf.force_ssl_for_redirect: true")
 		scheme = "https"
 	end
 	
@@ -218,6 +219,8 @@ function _M.run(conf)
 	else
 	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	end
+
+	ngx.log(ngx.WARN, "callback_url: " .. callback_url)
 
 	local authHeader = false
     local access_token = ngx.req.get_headers()["Authorization"]
