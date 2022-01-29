@@ -203,21 +203,21 @@ function _M.run(conf)
 	else
 	   path_prefix = ngx.var.request_uri
 	end
+
+	scheme = ngx.var.scheme
+	if conf.force_ssl_for_redirect then
+		scheme = "https"
+	end
 	
 	if pl_stringx.endswith(path_prefix, "/") then
 	  path_prefix = path_prefix:sub(1, path_prefix:len() - 1)
-	  callback_url = ngx.var.scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
+	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	elseif pl_stringx.endswith(path_prefix, "/oauth2/callback") then --We are in the callback of our proxy
-	  callback_url = ngx.var.scheme .. "://" .. ngx.var.host .. path_prefix
+	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix
 	  handle_callback(conf, callback_url)
 	else
-	  callback_url = ngx.var.scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
+	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	end
-
-	ngx.log(ngx.WARN, "============================================================")
-	ngx.log(ngx.WARN, "Scheme: " .. ngx.var.scheme)
-	ngx.log(ngx.WARN, "callback_url: " .. callback_url)
-	ngx.log(ngx.WARN, "============================================================")
 
 	local authHeader = false
     local access_token = ngx.req.get_headers()["Authorization"]
