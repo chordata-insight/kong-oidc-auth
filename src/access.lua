@@ -214,7 +214,7 @@ function _M.run(conf)
 
 	ngx.log(ngx.INFO, "============================================================")
 	ngx.log(ngx.INFO, "Scheme: " .. ngx.var.scheme)
-	ngx.log(ngx.INFO, "callback_url: " .. callback_url.scheme)
+	ngx.log(ngx.INFO, "callback_url: " .. callback_url)
 	ngx.log(ngx.INFO, "============================================================")
 
 	local authHeader = false
