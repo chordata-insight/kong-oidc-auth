@@ -39,6 +39,7 @@ return {
            { hosted_domain = { type = "string" }, },
            { email_key = { type = "string" }, },
            { user_info_cache_enabled = { type = "boolean", default = false}, },
+           { force_ssl_for_redirect = { type = "boolean", default = false}, },
     }, }, },
   },
 }
