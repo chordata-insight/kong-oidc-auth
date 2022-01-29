@@ -134,6 +134,8 @@ function  handle_callback( conf, callback_url )
     local code = args.code
     local redirect_url
 
+	ngx.log(ngx.WARN, "handle_callback: " .. callback_url)
+
     if args.redirect_url == nil then
        redirect_url = callback_url
     else
@@ -212,10 +214,10 @@ function _M.run(conf)
 	  callback_url = ngx.var.scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	end
 
-	ngx.log(ngx.INFO, "============================================================")
-	ngx.log(ngx.INFO, "Scheme: " .. ngx.var.scheme)
-	ngx.log(ngx.INFO, "callback_url: " .. callback_url)
-	ngx.log(ngx.INFO, "============================================================")
+	ngx.log(ngx.WARN, "============================================================")
+	ngx.log(ngx.WARN, "Scheme: " .. ngx.var.scheme)
+	ngx.log(ngx.WARN, "callback_url: " .. callback_url)
+	ngx.log(ngx.WARN, "============================================================")
 
 	local authHeader = false
     local access_token = ngx.req.get_headers()["Authorization"]
