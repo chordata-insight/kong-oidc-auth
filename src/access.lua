@@ -145,6 +145,8 @@ function  handle_callback( conf, callback_url )
     end
 	
     if code then
+		ngx.log(ngx.WARN, "handle_callback: have code")
+
         local httpc = http:new()
         local res, err = httpc:request_uri(conf.token_url, {
             method = "POST",
@@ -156,6 +158,7 @@ function  handle_callback( conf, callback_url )
         })
 
         if not res then
+			ngx.log(ngx.ERROR, "handle_callback: no response from token_url endpoint")
             oidc_error = {status = ngx.HTTP_INTERNAL_SERVER_ERROR, message = "Failed to request: " .. err}
             return kong.response.exit(oidc_error.status, { message = oidc_error.message })
         end
@@ -163,6 +166,7 @@ function  handle_callback( conf, callback_url )
         local json = cjson.decode(res.body)
         local access_token = json.access_token
         if not access_token then
+			ngx.log(ngx.WARN, "handle_callback: no access_token")
             oidc_error = {status = ngx.HTTP_BAD_REQUEST, message = json.error_description}
             return kong.response.exit(oidc_error.status, { message = oidc_error.message })
         end
@@ -192,6 +196,7 @@ function  handle_callback( conf, callback_url )
 		    return
         end
     else
+		ngx.log(ngx.WARN, "handle_callback: no code")
         oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "User has denied access to the resources"}
         return kong.response.exit(oidc_error.status, { message = oidc_error.message })
     end
