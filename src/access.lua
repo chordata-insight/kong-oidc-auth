@@ -158,7 +158,7 @@ function  handle_callback( conf, callback_url )
         })
 
         if not res then
-			ngx.log(ngx.ERROR, "handle_callback: no response from token_url endpoint")
+			ngx.log(ngx.ERR, "handle_callback: no response from token_url endpoint: " .. err)
             oidc_error = {status = ngx.HTTP_INTERNAL_SERVER_ERROR, message = "Failed to request: " .. err}
             return kong.response.exit(oidc_error.status, { message = oidc_error.message })
         end
