@@ -137,8 +137,10 @@ function  handle_callback( conf, callback_url )
 	ngx.log(ngx.WARN, "handle_callback: " .. callback_url)
 
     if args.redirect_url == nil then
+		ngx.log(ngx.WARN, "no redirect_url")
        redirect_url = callback_url
     else
+		ngx.log(ngx.WARN, "redirect_url: " .. args.redirect_url)
        redirect_url = args.redirect_url
     end
 	
@@ -165,25 +167,29 @@ function  handle_callback( conf, callback_url )
             return kong.response.exit(oidc_error.status, { message = oidc_error.message })
         end
 
-	if type(ngx.header["Set-Cookie"]) == "table" then
-	   ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, unpack(ngx.header["Set-Cookie"]) }
+		if type(ngx.header["Set-Cookie"]) == "table" then
+			ngx.log(ngx.WARN, "update cookie")
+			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, unpack(ngx.header["Set-Cookie"]) }
         else
-	   ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
+			ngx.log(ngx.WARN, "set cookie")
+			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
         end
 	
-	--Support redirection back to Application Loggedin Dashboard for subsequent transactions
-	if conf.app_login_redirect_url ~= "" then
-	   return ngx.redirect(conf.app_login_redirect_url)
-	end
+		--Support redirection back to Application Loggedin Dashboard for subsequent transactions
+		if conf.app_login_redirect_url ~= "" then
+			ngx.log(ngx.WARN, "redirecting to app_login_redirect_url: " .. conf.app_login_redirect_url)
+		   return ngx.redirect(conf.app_login_redirect_url)
+		end
 	
         -- Support redirection back to Kong if necessary
         local redirect_back = ngx.var.cookie_EOAuthRedirectBack
 		
         if redirect_back then
+			ngx.log(ngx.WARN, "redirect back: " .. redirect_back)
             return ngx.redirect(redirect_back) --Should always land here if no custom Loggedin page defined!
         else
-          --return redirect_to_auth(conf, callback_url)
-	    return
+         	--return redirect_to_auth(conf, callback_url)
+		    return
         end
     else
         oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "User has denied access to the resources"}
@@ -211,12 +217,15 @@ function _M.run(conf)
 	end
 	
 	if pl_stringx.endswith(path_prefix, "/") then
+	  ngx.log(ngx.WARN, "ends with /")
 	  path_prefix = path_prefix:sub(1, path_prefix:len() - 1)
 	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	elseif pl_stringx.endswith(path_prefix, "/oauth2/callback") then --We are in the callback of our proxy
+	  ngx.log(ngx.WARN, "ends with /oauth2/callback")
 	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix
 	  handle_callback(conf, callback_url)
 	else
+	  ngx.log(ngx.WARN, "set callback_url with oauth2")
 	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
 	end
 
@@ -260,12 +269,15 @@ function _M.run(conf)
 
         local encrypted_token = ngx.var.cookie_EOAuthToken
         if encrypted_token then
+	        ngx.log(ngx.WARN, "have encrypted_token")
             access_token = decode_token(encrypted_token, conf)
         end
 
 	    	
 		-- check if we are authenticated already
 		if access_token then	    
+	        ngx.log(ngx.WARN, "have access_token")
+
 		    --They had a valid EOAuthToken so its safe to process a proper logout now.
 		    if pl_stringx.endswith(path_prefix, "/logout") then
 			    ngx.log(ngx.WARN, "logging out")
@@ -331,6 +343,7 @@ function _M.run(conf)
 				end
 		    end
 		else
+	        ngx.log(ngx.WARN, "no access_token")
 		    return redirect_to_auth(conf, callback_url)
 		end
 	end
