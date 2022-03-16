@@ -210,7 +210,7 @@ function _M.run(conf)
 	   path_prefix = ngx.var.request_uri
 	end
 
-	scheme = ngx.var.scheme
+	local scheme = ngx.var.scheme
 	if conf.force_ssl_for_redirect then
 		ngx.log(ngx.WARN, "conf.force_ssl_for_redirect: true")
 		scheme = "https"
