@@ -330,6 +330,7 @@ function _M.run(conf)
 				    end
 
 				    for i, key in ipairs(conf.user_keys) do
+					    ngx.log(ngx.WARN, "set header: " .. key .. ", " .. userInfo[key])
 						ngx.header["X-Oauth-".. key] = json[key]
 						ngx.req.set_header("X-Oauth-".. key, json[key])
 			    	end
