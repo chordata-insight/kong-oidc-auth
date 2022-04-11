@@ -57,7 +57,7 @@ local function getUserInfo(access_token, callback_url, conf, authHeader)
 	ngx.log(ngx.INFO, "Got userInfo response")
 
 	local userJson = cjson.decode(res.body)
-    -- ngx.log(ngx.WARN, userJson)
+    ngx.log(ngx.WARN, userJson)
 
 	return userJson
 end
@@ -260,7 +260,7 @@ function _M.run(conf)
 		    end
 
 		    for i, key in ipairs(conf.user_keys) do
-			    ngx.log(ngx.WARN, "1 set header: " .. key .. ", " .. (json[key] or ""))
+			    -- ngx.log(ngx.WARN, "1 set header: " .. key .. ", " .. (json[key] or ""))
 				ngx.header["X-Oauth-".. key] = json[key]
 				ngx.req.set_header("X-Oauth-".. key, json[key])
 	    	end
@@ -303,7 +303,7 @@ function _M.run(conf)
 				local userInfo = getKongKey(encrypted_token, access_token, callback_url, conf)
 				if userInfo then
 					for i, key in ipairs(conf.user_keys) do		
-					    ngx.log(ngx.WARN, "2 set header: " .. key .. ", " .. (userInfo[key] or ""))
+					    -- ngx.log(ngx.WARN, "2 set header: " .. key .. ", " .. (userInfo[key] or ""))
 				    	ngx.header["X-Oauth-".. key] = userInfo[key]
 				    	ngx.req.set_header("X-Oauth-".. key, userInfo[key])
 					end
@@ -332,7 +332,7 @@ function _M.run(conf)
 				    end
 
 				    for i, key in ipairs(conf.user_keys) do
-					    ngx.log(ngx.WARN, "3 set header: " .. key .. ", " .. (json[key] or ""))
+					    -- ngx.log(ngx.WARN, "3 set header: " .. key .. ", " .. (json[key] or ""))
 						ngx.header["X-Oauth-".. key] = json[key]
 						ngx.req.set_header("X-Oauth-".. key, json[key])
 			    	end
