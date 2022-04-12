@@ -12,6 +12,19 @@ local salt = nil --16 char alphanumeric
 local cookieDomain = nil
 local kong = kong 
 
+local function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
+end
+
 local function getUserInfo(access_token, callback_url, conf, authHeader)
     ngx.log(ngx.WARN, "getUserInfo from URL")
     ngx.log(ngx.WARN, conf.user_url)
@@ -57,7 +70,7 @@ local function getUserInfo(access_token, callback_url, conf, authHeader)
 	ngx.log(ngx.INFO, "Got userInfo response")
 
 	local userJson = cjson.decode(res.body)
-    ngx.log(ngx.WARN, userJson)
+    ngx.log(ngx.WARN, dump(userJson))
 
 	return userJson
 end
