@@ -192,22 +192,21 @@ function  handle_callback( conf, callback_url )
 			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
         end
 	
-		--Support redirection back to Application Loggedin Dashboard for subsequent transactions
-		if conf.app_login_redirect_url ~= "" then
-			ngx.log(ngx.WARN, "redirecting to app_login_redirect_url: " .. conf.app_login_redirect_url)
-		   return ngx.redirect(conf.app_login_redirect_url)
-		end
-	
         -- Support redirection back to Kong if necessary
         local redirect_back = ngx.var.cookie_EOAuthRedirectBack
 		
         if redirect_back then
 			ngx.log(ngx.WARN, "redirect back: " .. redirect_back)
             return ngx.redirect(redirect_back) --Should always land here if no custom Loggedin page defined!
-        else
-         	--return redirect_to_auth(conf, callback_url)
-		    return
         end
+
+		--Support redirection back to Application Loggedin Dashboard for subsequent transactions
+		if conf.app_login_redirect_url ~= "" then
+			ngx.log(ngx.WARN, "redirecting to app_login_redirect_url: " .. conf.app_login_redirect_url)
+		   return ngx.redirect(conf.app_login_redirect_url)
+		end
+		
+		return	
     else
 		ngx.log(ngx.WARN, "handle_callback: no code")
         oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "User has denied access to the resources"}
