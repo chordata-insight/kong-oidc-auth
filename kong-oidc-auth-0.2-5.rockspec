@@ -1,5 +1,5 @@
 package = "kong-oidc-auth"
-version = "0.2-4"
+version = "0.2-5"
 source = {
    url = "git+https://github.com/chordata-insight/kong-oidc-auth.git"
 }
