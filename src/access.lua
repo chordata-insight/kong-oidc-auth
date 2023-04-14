@@ -97,10 +97,6 @@ function redirect_to_auth( conf, callback_url )
 		ngx.header["Set-Cookie"] = { "EOAuthRedirectBack=" .. ngx.var.request_uri .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 120) .. ";Max-Age=120;HttpOnly", ngx.header["Set-Cookie"] }
     end
 
-	-- todo delete the below 2 lines
-	ngx.log(ngx.WARN, "set my test cookie")
-	ngx.header["Set-Cookie"] = { "MyTestCookie=" .. "testValue" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 120) .. ";Max-Age=120;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
-
     -- Redirect to the /oauth endpoint
     local oauth_authorize = nil
     if(not conf.pf_idp_adapter_id or conf.pf_idp_adapter_id == "") then --Standard Auth URL(Something other than ping)
@@ -199,10 +195,6 @@ function  handle_callback( conf, callback_url )
 			-- ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
 			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", ngx.header["Set-Cookie"] }
         end
-
-		-- todo delete the below line
-		ngx.log(ngx.WARN, "set my test cookie 2")
-		ngx.header["Set-Cookie"] = { "MyTestCookie2=" .. "testValue2" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 120) .. ";Max-Age=120;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
 
         -- Support redirection back to Kong if necessary
         local redirect_back = ngx.var.cookie_EOAuthRedirectBack
