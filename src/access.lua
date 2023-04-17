@@ -196,6 +196,9 @@ function  handle_callback( conf, callback_url )
 			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", ngx.header["Set-Cookie"] }
         end
 
+		ngx.log(ngx.WARN, "above is the token")
+		ngx.log(ngx.WARN, encode_token(access_token, conf))
+
 		if type(ngx.header["Set-Cookie"]) == "table" then
 			ngx.log(ngx.WARN, "update test cookie 1")
 			ngx.header["Set-Cookie"] = { "MyTestCookie1=" .. "testValue1" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
@@ -326,7 +329,6 @@ function _M.run(conf)
 			ngx.log(ngx.WARN, "above is the token")
 			ngx.log(ngx.WARN, encode_token(access_token, conf))
 
-		    --Update the Cookie to increase longevity for 30 more minutes if active proxying
 		    if type(ngx.header["Set-Cookie"]) == "table" then
 				ngx.log(ngx.WARN, "update test cookie 2")
 				ngx.header["Set-Cookie"] = { "MyTestCookie2=" .. "myTestValue2" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
