@@ -97,6 +97,14 @@ function redirect_to_auth( conf, callback_url )
 		ngx.header["Set-Cookie"] = { "EOAuthRedirectBack=" .. ngx.var.request_uri .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 120) .. ";Max-Age=120;HttpOnly", ngx.header["Set-Cookie"] }
     end
 
+    if type(ngx.header["Set-Cookie"]) == "table" then
+		ngx.log(ngx.WARN, "update test cookie 3")
+		ngx.header["Set-Cookie"] = { "MyTestCookie3=" .. "myTestValue3" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
+    else
+		ngx.log(ngx.WARN, "set test cookie 3")
+		ngx.header["Set-Cookie"] = { "MyTestCookie3=" .. "myTestValue3" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", ngx.header["Set-Cookie"] }
+    end
+
     -- Redirect to the /oauth endpoint
     local oauth_authorize = nil
     if(not conf.pf_idp_adapter_id or conf.pf_idp_adapter_id == "") then --Standard Auth URL(Something other than ping)
