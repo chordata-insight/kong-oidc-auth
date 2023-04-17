@@ -325,10 +325,10 @@ function _M.run(conf)
 
 		    --Update the Cookie to increase longevity for 30 more minutes if active proxying
 		    if type(ngx.header["Set-Cookie"]) == "table" then
-			ngx.log(ngx.WARN, "update test cookie 2")
+				ngx.log(ngx.WARN, "update test cookie 2")
 				ngx.header["Set-Cookie"] = { "MyTestCookie2=" .. "myTestValue2" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
 		    else
-			ngx.log(ngx.WARN, "set test cookie 2")
+				ngx.log(ngx.WARN, "set test cookie 2")
 				ngx.header["Set-Cookie"] = { "MyTestCookie2=" .. "myTestValue2" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", ngx.header["Set-Cookie"] }
 		    end
 
