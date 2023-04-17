@@ -10,7 +10,7 @@ local aes = cipher.new("AES-128-CBC")
 local oidc_error = nil
 local salt = nil --16 char alphanumeric
 local cookieDomain = nil
-local kong = kong
+local kong = kong 
 
 local function dump(o)
    if type(o) == 'table' then
@@ -96,10 +96,7 @@ function redirect_to_auth( conf, callback_url )
     else
 		ngx.header["Set-Cookie"] = { "EOAuthRedirectBack=" .. ngx.var.request_uri .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 120) .. ";Max-Age=120;HttpOnly", ngx.header["Set-Cookie"] }
     end
-
-    ngx.log(ngx.WARN, "setting test cookie MyTestCookie3")
-	ngx.header["Set-Cookie"] = { "MyTestCookie3=" .. "myValue3" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
-
+	
     -- Redirect to the /oauth endpoint
     local oauth_authorize = nil
     if(not conf.pf_idp_adapter_id or conf.pf_idp_adapter_id == "") then --Standard Auth URL(Something other than ping)
@@ -108,7 +105,7 @@ function redirect_to_auth( conf, callback_url )
         oauth_authorize = conf.authorize_url .. "?pfidpadapterid=" .. (conf.pf_idp_adapter_id or "") .. "&response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope
        --oauth_authorize = conf.authorize_url .. "?pfidpadapterid=" .. conf.pf_idp_adapter_id .. "&response_type=code&client_id=" .. conf.client_id .. "&redirect_uri=" .. callback_url .. "&scope=" .. conf.scope .. "&prompt=none"
     end
-
+    
     return ngx.redirect(oauth_authorize)
 end
 
@@ -120,7 +117,7 @@ function decode_token(token, conf)
     ngx.log(ngx.WARN, "decoding token from cookie")
 
     local status, token = pcall(function () return aes:decrypt(openssl_digest.new("md5"):final(conf.client_secret), salt, true):final(ngx.decode_base64(token)) end)
-
+    
     if status then
         return token
     else
@@ -138,11 +135,11 @@ function  handle_logout(encrypted_token, conf)
 	-- ngx.header["Set-Cookie"] = { "EOAuthToken=;Path=/;Expires=Thu, Jan 01 1970 00:00:00 UTC;Max-Age=0;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
 	ngx.header["Set-Cookie"] = { "EOAuthToken=;Path=/;Expires=Thu, Jan 01 1970 00:00:00 UTC;Max-Age=0;HttpOnly", ngx.header["Set-Cookie"] }
   end
-
+   
   if conf.user_info_cache_enabled then
     singletons.cache:invalidate(encrypted_token)
   end
-
+   
   return kong.response.exit(200)
 end
 
@@ -161,7 +158,7 @@ function  handle_callback( conf, callback_url )
 		ngx.log(ngx.WARN, "redirect_url: " .. args.redirect_url)
        redirect_url = args.redirect_url
     end
-
+	
     if code then
 		ngx.log(ngx.WARN, "handle_callback: have code")
 
@@ -198,13 +195,10 @@ function  handle_callback( conf, callback_url )
 			-- ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
 			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", ngx.header["Set-Cookie"] }
         end
-
-	    ngx.log(ngx.WARN, "setting test cookie MyTestCookie2")
-		ngx.header["Set-Cookie"] = { "MyTestCookie2=" .. "myValue2" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
-
+	
         -- Support redirection back to Kong if necessary
         local redirect_back = ngx.var.cookie_EOAuthRedirectBack
-
+		
         if redirect_back then
 			ngx.log(ngx.WARN, "redirect back: " .. redirect_back)
             return ngx.redirect(redirect_back) --Should always land here if no custom Loggedin page defined!
@@ -215,8 +209,8 @@ function  handle_callback( conf, callback_url )
 			ngx.log(ngx.WARN, "redirecting to app_login_redirect_url: " .. conf.app_login_redirect_url)
 		   return ngx.redirect(conf.app_login_redirect_url)
 		end
-
-		return
+		
+		return	
     else
 		ngx.log(ngx.WARN, "handle_callback: no code")
         oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "User has denied access to the resources"}
@@ -242,7 +236,7 @@ function _M.run(conf)
 		ngx.log(ngx.WARN, "conf.force_ssl_for_redirect: true")
 		scheme = "https"
 	end
-
+	
 	if pl_stringx.endswith(path_prefix, "/") then
 	  ngx.log(ngx.WARN, "ends with /")
 	  path_prefix = path_prefix:sub(1, path_prefix:len() - 1)
@@ -267,7 +261,7 @@ function _M.run(conf)
 
 	    ngx.log(ngx.INFO, "Auth Header No Cookie so getUserInfo")
 		local json = getUserInfo(access_token, callback_url, conf, true)
-
+	
 		if json then
 		    ngx.log(ngx.INFO, "Got json")
 	    	if conf.hosted_domain and conf.email_key then
@@ -301,9 +295,9 @@ function _M.run(conf)
             access_token = decode_token(encrypted_token, conf)
         end
 
-
+	    	
 		-- check if we are authenticated already
-		if access_token then
+		if access_token then	    
 	        ngx.log(ngx.WARN, "have access_token")
 
 		    --They had a valid EOAuthToken so its safe to process a proper logout now.
@@ -311,7 +305,7 @@ function _M.run(conf)
 			    ngx.log(ngx.WARN, "logging out")
 		    	return handle_logout(encrypted_token, conf)
 		    end
-
+		    
 		    --Update the Cookie to increase longevity for 30 more minutes if active proxying
 		    if type(ngx.header["Set-Cookie"]) == "table" then
 				-- ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, unpack(ngx.header["Set-Cookie"]) }
@@ -321,20 +315,17 @@ function _M.run(conf)
 				ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", ngx.header["Set-Cookie"] }
 		    end
 
-		    ngx.log(ngx.WARN, "setting test cookie MyTestCookie1")
-			ngx.header["Set-Cookie"] = { "MyTestCookie1=" .. "myValue1" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
-
 		     --CACHE LOGIC - Check boolean and then if EOAUTH has existing key -> userInfo value
 		    if conf.user_info_cache_enabled then
 			    ngx.log(ngx.WARN, "user_info_cache_enabled = true")
 				local userInfo = getKongKey(encrypted_token, access_token, callback_url, conf)
 				if userInfo then
-					for i, key in ipairs(conf.user_keys) do
+					for i, key in ipairs(conf.user_keys) do		
 					    -- ngx.log(ngx.WARN, "2 set header: " .. key .. ", " .. (userInfo[key] or ""))
 				    	ngx.header["X-Oauth-".. key] = userInfo[key]
 				    	ngx.req.set_header("X-Oauth-".. key, userInfo[key])
 					end
-				    ngx.header["X-Oauth-Token"] = access_token
+				    ngx.header["X-Oauth-Token"] = access_token	
 					return
 				end
 		    end
@@ -344,7 +335,7 @@ function _M.run(conf)
 		    if not ngx.var.cookie_EOAuthUserInfo then
 			    ngx.log(ngx.WARN, "No Cookie so getUserInfo")
 				local json = getUserInfo(access_token, callback_url, conf, false)
-
+			
 				if json then
 				    ngx.log(ngx.WARN, "Got json")
 			    	if conf.hosted_domain and conf.email_key then
