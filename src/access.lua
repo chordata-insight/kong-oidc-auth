@@ -192,6 +192,7 @@ function  handle_callback( conf, callback_url )
 			-- ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", unpack(ngx.header["Set-Cookie"]) }
         else
 			ngx.log(ngx.WARN, "set cookie")
+			ngx.log(ngx.WARN, encode_token(access_token, conf))
 			ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
 			-- ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly", ngx.header["Set-Cookie"] }
         end
@@ -199,10 +200,10 @@ function  handle_callback( conf, callback_url )
         -- Support redirection back to Kong if necessary
         local redirect_back = ngx.var.cookie_EOAuthRedirectBack
 
-        if redirect_back then
-			ngx.log(ngx.WARN, "redirect back: " .. redirect_back)
-            return ngx.redirect(redirect_back) --Should always land here if no custom Loggedin page defined!
-        end
+        -- if redirect_back then
+		-- 	ngx.log(ngx.WARN, "redirect back: " .. redirect_back)
+        --     return ngx.redirect(redirect_back) --Should always land here if no custom Loggedin page defined!
+        -- end
 
 		--Support redirection back to Application Loggedin Dashboard for subsequent transactions
 		if conf.app_login_redirect_url ~= "" then
@@ -245,6 +246,7 @@ function _M.run(conf)
 	  ngx.log(ngx.WARN, "ends with /oauth2/callback")
 	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix
 	  handle_callback(conf, callback_url)
+	  ngx.log(ngx.WARN, "handled callback")
 	else
 	  ngx.log(ngx.WARN, "set callback_url with oauth2")
 	  callback_url = scheme .. "://" .. ngx.var.host .. path_prefix .. "/oauth2/callback"
