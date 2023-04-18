@@ -206,10 +206,10 @@ function  handle_callback( conf, callback_url )
         -- end
 
 		--Support redirection back to Application Loggedin Dashboard for subsequent transactions
-		if conf.app_login_redirect_url ~= "" then
-			ngx.log(ngx.WARN, "redirecting to app_login_redirect_url: " .. conf.app_login_redirect_url)
-		   return ngx.redirect(conf.app_login_redirect_url)
-		end
+		-- if conf.app_login_redirect_url ~= "" then
+		-- 	ngx.log(ngx.WARN, "redirecting to app_login_redirect_url: " .. conf.app_login_redirect_url)
+		--    return ngx.redirect(conf.app_login_redirect_url)
+		-- end
 
 		return
     else
