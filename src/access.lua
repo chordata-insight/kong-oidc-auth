@@ -172,7 +172,7 @@ function  handle_callback( conf, callback_url )
 
     local json = cjson.decode(res.body)
     local access_token = json.access_token
-  
+
     if not access_token then
       ngx.log(ngx.WARN, "handle_callback: no access_token")
       oidc_error = {status = ngx.HTTP_BAD_REQUEST, message = json.error_description}
@@ -185,6 +185,16 @@ function  handle_callback( conf, callback_url )
     else
       ngx.log(ngx.WARN, "set cookie")
       ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
+    end
+
+    ngx.log(ngx.WARN, "this is the token that will be as cookie: " .. encode_token(access_token, conf))
+
+    if type(ngx.header["Set-Cookie"]) == "table" then
+      ngx.log(ngx.WARN, "update small cookie")
+      ngx.header["Set-Cookie"] = { "SmallEOAuthToken=" .. "iAmSoSmallValue" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, unpack(ngx.header["Set-Cookie"]) }
+    else
+      ngx.log(ngx.WARN, "set small cookie")
+      ngx.header["Set-Cookie"] = { "SmallEOAuthToken=" .. "iAmSoSmallValue" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
     end
 
     -- Support redirection back to Kong if necessary
@@ -315,7 +325,7 @@ function _M.run(conf)
             ngx.header["X-Oauth-".. key] = userInfo[key]
             ngx.req.set_header("X-Oauth-".. key, userInfo[key])
           end
-  
+
           ngx.header["X-Oauth-Token"] = access_token
           return
         end
@@ -344,7 +354,7 @@ function _M.run(conf)
             ngx.header["X-Oauth-".. key] = json[key]
             ngx.req.set_header("X-Oauth-".. key, json[key])
           end
-        
+
           ngx.header["X-Oauth-Token"] = access_token
 
           if type(ngx.header["Set-Cookie"]) == "table" then
