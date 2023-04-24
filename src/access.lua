@@ -180,6 +180,7 @@ function  handle_callback( conf, callback_url )
     end
 
     ngx.log(ngx.WARN, "this is the token that will be as cookie: " .. encode_token(access_token, conf))
+    ngx.log(ngx.WARN, "this is the token: " .. access_token)
 
     if type(ngx.header["Set-Cookie"]) == "table" then
       ngx.log(ngx.WARN, "update small cookie")
@@ -189,13 +190,13 @@ function  handle_callback( conf, callback_url )
       ngx.header["Set-Cookie"] = { "SmallEOAuthToken=" .. "iAmSoSmallValue" .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
     end
 
-    if type(ngx.header["Set-Cookie"]) == "table" then
-      ngx.log(ngx.WARN, "update cookie")
-      ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, unpack(ngx.header["Set-Cookie"]) }
-    else
-      ngx.log(ngx.WARN, "set cookie")
-      ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
-    end
+--     if type(ngx.header["Set-Cookie"]) == "table" then
+--       ngx.log(ngx.WARN, "update cookie")
+--       ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, unpack(ngx.header["Set-Cookie"]) }
+--     else
+--       ngx.log(ngx.WARN, "set cookie")
+--       ngx.header["Set-Cookie"] = { "EOAuthToken=" .. encode_token(access_token, conf) .. ";Path=/;Expires=" .. ngx.cookie_time(ngx.time() + 1800) .. ";Max-Age=1800;HttpOnly" .. cookieDomain, ngx.header["Set-Cookie"] }
+--     end
 
     -- Support redirection back to Kong if necessary
     local redirect_back = ngx.var.cookie_EOAuthRedirectBack
