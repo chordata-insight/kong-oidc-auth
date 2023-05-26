@@ -52,23 +52,6 @@ local function getUserInfo(access_token, callback_url, conf, authHeader)
 
   -- redirect to auth if user result is invalid not 200
   if not res or res.status ~= 200 then
-	-- Log the response headers
-    if res.headers then
-      ngx.log(ngx.INFO, "Response headers:")
-      for key, value in pairs(res.headers) do
-        ngx.log(ngx.INFO, key .. ": " .. value)
-      end
-    else
-      ngx.log(ngx.WARN, "No response headers found")
-    end
-
-    -- Log the response body
-    if res.body then
-      ngx.log(ngx.INFO, "Response body:")
-      ngx.log(ngx.INFO, res.body)
-    else
-      ngx.log(ngx.WARN, "No response body found")
-    end
     if authHeader then
       oidc_error = {status = ngx.HTTP_UNAUTHORIZED, message = "Hosted domain is not matching"}
       return kong.response.exit(oidc_error.status, { message = oidc_error.message })
